@@ -1,0 +1,211 @@
+import random
+global playing = True
+#------------------------------------------------------------------------------------
+# define all the cards available for the game
+
+suits = ('Hearts', 'Diamonds', 'Spades', 'Clubs')
+ranks = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace')
+values = {'Two':2, 'Three':3, 'Four':4, 'Five':5, 'Six':6, 'Seven':7, 'Eight':8, 'Nine':9, 'Ten':10, 'Jack':10,
+         'Queen':10, 'King':10, 'Ace':11}
+         
+#------------------------------------------------------------------------------------
+# class to create an object card
+
+class Card:   
+    def __init__(self, suit, rank,):
+        self.suit = suit
+        self.rank = rank
+        #self.value = value
+    def __str__(self):
+        return f"{self.rank} of {self.suit}"
+#------------------------------------------------------------------------------------
+#class to create a deck of cards and then shuffle the deck and then deal the card to the player
+class Deck():
+    def __init__(self):
+        self.deck_list = []
+        for suit in suits:
+            for rank in ranks:
+                self.deck_list.append(Card(suit,rank))
+       # return deck_list
+    
+    def __str__(self):
+        disp_deck = ''
+        for n in self.deck_list:
+            disp_deck += "\n" + n.__str__()
+        return disp_deck
+    
+    def __len__(self):
+        return len(self.deck_list)
+    
+    def shuffle(self):
+        random.shuffle(self.deck_list)
+    
+    def deal(self):
+        deal_card = self.deck_list.pop()
+        return deal_card
+#------------------------------------------------------------------------------------
+# creates hands for player and the dealer
+
+ class Hand:
+
+    def __init__(self):
+        self.cards = []
+        self.aces = 0
+        self.value = 0
+    
+    def add_card(self,card):
+        self.cards.append(card)
+        self.value += values[card.rank]
+        if card.rank == "Ace":
+            self.aces +=1
+        
+    def adjust_for_ace(self):
+        if self.value > 21 and self.aces == 1:
+            self.value -= 10
+            self.aces -= 1
+            
+    def __str__(self):
+        disp_h = ''
+        for n in self.cards:
+            disp_h += "\n" + n.__str__()
+        return disp_h
+#------------------------------------------------------------------------------------
+# sets the initial account of the player, checks for the win status of the player
+
+   class Chips:
+    def __init__(self):
+        self.total = 100
+        self.bet = 0
+    def win_bet(self):
+        self.total += self.bet
+        print("Congratulations! You have won! Your balance is now {}".format(self.total))
+    def lose_bet(self):
+        self.total -= self.bet
+        print("You have lost! Your balance is now {}".format(self.total))
+  
+#------------------------------------------------------------------------------------
+# makes adjustment in the accounts after winning and losing
+
+  def take_bet(chips):
+    while True:
+        try:
+            chips.bet = int(input('Enter the amount you want to bet: '))
+        except ErrorValue:
+            print("Invalid value entered")
+        else:
+            if chips.bet > chips.total:
+                print("value cannot exceed {}".format(chips.total))
+            else:
+                break
+#------------------------------------------------------------------------------------
+# deals an additional card to the user or the dealer when required 
+
+  def hit(deck,hand):
+    hand.add_card(deck.deal())
+    hand.adjust_for_ace()
+   
+  def hit_or_stand(deck,hand):
+    global playing  # to control an upcoming while loop
+    while True:
+        x = input("hit 'h' for hit and 's' for stand: ")
+        if x == 'h':
+            hit(deck,hand)
+        elif x == 's':
+            print("\nThe player stands, dealer's turn now")
+            playing = False
+        else:
+            print("Sorry, please try again")
+            continue
+        break
+ #------------------------------------------------------------------------------------
+ # displays the cards of the player and the dealer. Initially, only one card of the dealer is shown. 
+ 
+  def show_some(player,dealer):
+    print("\nDealer's Hand:")
+    print(" <card hidden>")
+    print('',dealer.cards[1])  
+    print("\nPlayer's Hand:", *player.cards, sep='\n ')
+    print("\n")
+    
+def show_all(player,dealer):
+    print("\nDealer's Hand:", *dealer.cards, sep='\n ')
+    print("Dealer's Hand =",dealer.value)
+    print("\n")
+    print("\nPlayer's Hand:", *player.cards, sep='\n ')
+    print("Player's Hand =",player.value)
+    print("\n")
+    
+#------------------------------------------------------------------------------------
+# game starts here
+
+game = True
+
+while game:
+    # Step1: opening statement:
+
+    print("Welcome to the game of black jack! Try to beat the dealer and win money!")
+#------------------------------------------------------------------------------------
+    # Step2: create a shuffled deck of cards
+
+    actual_deck = Deck()
+    actual_deck.shuffle()
+#------------------------------------------------------------------------------------
+    #step3: deal two cards to dealer and player and set thier bets
+
+    player_hand = Hand()
+    dealer_hand = Hand()
+    player_hand.add_card(actual_deck.deal())
+    player_hand.add_card(actual_deck.deal())
+    dealer_hand.add_card(actual_deck.deal())
+    dealer_hand.add_card(actual_deck.deal())
+
+    player_bet = Chips()
+    take_bet(player_bet)
+
+    #step3 : show the cards and the bet placed
+
+    show_some(player_hand,dealer_hand)
+#------------------------------------------------------------------------------------
+    while playing:
+        #after the fist deal, ask the player he wants to hit or stand
+        hit_or_stand(actual_deck, player_hand)
+        show_some(player_hand,dealer_hand)
+
+        #see if the player has busted, the game ends
+        if player_hand.value > 21:
+            print("\n player busts! ")
+            player_bet.lose_bet()
+            break
+        else:
+            continue
+
+    # the loop will end when the plauyer stands
+
+    #hit dealer till he reaches 17
+    if player_hand.value < 21:
+        while(dealer_hand.value < 17):
+            hit(actual_deck,dealer_hand)
+
+        show_all(player_hand,dealer_hand)
+
+        if dealer_hand.value > 21:
+            print("dealer busts")
+            player_bet.win_bet()
+
+        elif dealer_hand.value > player_hand.value:
+            print("dealer wins")
+            player_bet.lose_bet()
+
+        elif dealer_hand.value < player_hand.value:
+            print("player wins")
+            player_bet.win_bet()
+
+        else:
+            print("it is a draw")
+    
+    again_game = input("Do you wanna try your luck again? 'y/n' ")
+    if again_game.lower() == "y":
+        continue
+    else:
+        print("The game has ended")
+        game = False
